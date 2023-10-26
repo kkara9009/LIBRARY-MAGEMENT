@@ -1,127 +1,104 @@
-import json
+from datetime import datetime, timedelta
 
-# Create a library database
-library = {
-    "books": [],
-    "patrons": []
-}
-
-# Define book and patron classes
-class Book:
-    def __init__(self, title, author, ISBN, available=True):
-        self.title = title
-        self.author = author
-        self.ISBN = ISBN
-        self.available = available
-
-    def __str__(self):
-        return f"{self.title} by {self.author}"
-
-class Patron:
-    def __init__(self, name, card_number):
+class Library:
+    def __init__(self, name):
         self.name = name
-        self.card_number = card_number
-        self.checked_out_books = []
+        self.books = []
+        self.users = {}
+        self.lend_data = {}
 
-    def __str__(self):
-        return self.name
+    def display_books(self):
+        if self.books:
+            for index, book in enumerate(self.books, 1):
+                if book["title"] in self.lend_data:
+                    due_date = self.lend_data[book["title"]]
+                    status = f" (Lent to: {due_date})"
+                else:
+                    status = " (Available)"
+                print(f'({index}) {book["title"]} by {book["author"]}{status}')
+        else:
+            print("No books available in the library.")
+        print()
 
-# Function to save library data to a JSON file
-def save_library_data():
-    with open("library_data.json", "w") as file:
-        json.dump(library, file, indent=4)
-
-# Function to load library data from a JSON file
-def load_library_data():
-    try:
-        with open("library_data.json", "r") as file:
-            return json.load(file)
-    except FileNotFoundError:
-        return {
-            "books": [],
-            "patrons": []
+    def add_book(self, title, author, genre, isbn):
+        book = {
+            "title": title,
+            "author": author,
+            "genre": genre,
+            "isbn": isbn,
         }
+        self.books.append(book)
+        print(f"{title} by {author} has been added to the library.\n")
 
-# Initialize the library with data from the file, if available
-library = load_library_data()
-
-# Main menu
-while True:
-    print("\nLibrary Management System")
-    print("1. Add a Book")
-    print("2. Add a Patron")
-    print("3. List Books")
-    print("4. List Patrons")
-    print("5. Check Out Book")
-    print("6. Return Book")
-    print("7. Save and Quit")
-
-    choice = input("Enter your choice: ")
-
-    if choice == "1":
-        title = input("Enter the book title: ")
-        author = input("Enter the author's name: ")
-        isbn = input("Enter the ISBN: ")
-        book = Book(title, author, isbn)
-        library["books"].append(book)
-        save_library_data()
-        print(f"{book} has been added to the library.")
-
-    elif choice == "2":
-        name = input("Enter the patron's name: ")
-        card_number = input("Enter the patron's card number: ")
-        patron = Patron(name, card_number)
-        library["patrons"].append(patron)
-        save_library_data()
-        print(f"{patron} has been added to the library patrons.")
-
-    elif choice == "3":
-        for book in library["books"]:
-            print(book)
-
-    elif choice == "4":
-        for patron in library["patrons"]:
-            print(patron)
-
-    elif choice == "5":
-        card_number = input("Enter patron's card number: ")
-        isbn = input("Enter book's ISBN: ")
-        for patron in library["patrons"]:
-            if patron.card_number == card_number:
-                for book in library["books"]:
-                    if book.ISBN == isbn and book.available:
-                        book.available = False
-                        patron.checked_out_books.append(book)
-                        print(f"{book.title} has been checked out by {patron.name}.")
-                        save_library_data()
-                        break
+    def lend_book(self, user_name, book_title, due_date):
+        for book in self.books:
+            if book["title"].lower() == book_title.lower():
+                if book_title not in self.lend_data:
+                    self.lend_data[book_title] = (user_name, due_date)
+                    print(f"{book_title} has been lent to {user_name} until {due_date}.\n")
                 else:
-                    print("Book not found or already checked out.")
-                break
+                    print(f"{book_title} is already lent to {self.lend_data[book_title][0]} until {self.lend_data[book_title][1]}.\n")
+                return
+        print(f"{book_title} is not available in the library.\n")
+
+    def return_book(self, book_title):
+        if book_title in self.lend_data:
+            self.lend_data.pop(book_title)
+            print(f"{book_title} has been returned.\n")
         else:
-            print("Patron not found.")
+            print(f"{book_title} is not marked as lent.\n")
 
-    elif choice == "6":
-        card_number = input("Enter patron's card number: ")
-        isbn = input("Enter book's ISBN: ")
-        for patron in library["patrons"]:
-            if patron.card_number == card_number:
-                for book in patron.checked_out_books:
-                    if book.ISBN == isbn:
-                        book.available = True
-                        patron.checked_out_books.remove(book)
-                        print(f"{book.title} has been returned by {patron.name}.")
-                        save_library_data()
-                        break
-                else:
-                    print("Book not found or not checked out by the patron.")
-                break
+    def create_user(self, user_name, user_email):
+        self.users[user_name] = user_email
+        print(f"User {user_name} has been created with email {user_email}.\n")
+
+    def view_users(self):
+        for user, email in self.users.items():
+            print(f"User: {user}, Email: {email}")
+        print()
+
+def main():
+    library_name = "My Library"
+    library = Library(library_name)
+
+    while True:
+        print(f"Welcome to {library_name}")
+        print("1. Display all books")
+        print("2. Add a book")
+        print("3. Lend a book")
+        print("4. Return a book")
+        print("5. Create a user")
+        print("6. View users")
+        print("7. Quit")
+        choice = input("Enter your choice: ")
+
+        if choice == "1":
+            library.display_books()
+        elif choice == "2":
+            title = input("Enter the title of the book: ")
+            author = input("Enter the author of the book: ")
+            genre = input("Enter the genre of the book: ")
+            isbn = input("Enter the ISBN of the book: ")
+            library.add_book(title, author, genre, isbn)
+        elif choice == "3":
+            user_name = input("Enter your name: ")
+            book_title = input("Enter the title of the book you want to lend: ")
+            due_date = input("Enter the due date (YYYY-MM-DD): ")
+            library.lend_book(user_name, book_title, due_date)
+        elif choice == "4":
+            book_title = input("Enter the title of the book you are returning: ")
+            library.return_book(book_title)
+        elif choice == "5":
+            user_name = input("Enter a new user's name: ")
+            user_email = input("Enter the user's email: ")
+            library.create_user(user_name, user_email)
+        elif choice == "6":
+            library.view_users()
+        elif choice == "7":
+            print("Thank you for using the library. Goodbye!")
+            break
         else:
-            print("Patron not found.")
+            print("Invalid choice. Please try again.")
 
-    elif choice == "7":
-        print("Saving library data and exiting. Goodbye!")
-        break
-
-    else:
-        print("Invalid choice. Please try again.")
+if __name__ == "__main__":
+    main()
