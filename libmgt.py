@@ -11,8 +11,8 @@ class Library:
         if self.books:
             for index, book in enumerate(self.books, 1):
                 if book["title"] in self.lend_data:
-                    due_date = self.lend_data[book["title"]]
-                    status = f" (Lent to: {due_date})"
+                    lender, due_date = self.lend_data[book["title"]]
+                    status = f" (Lent to: {lender} until {due_date})"
                 else:
                     status = " (Available)"
                 print(f'({index}) {book["title"]} by {book["author"]}{status}')
@@ -43,8 +43,8 @@ class Library:
 
     def return_book(self, book_title):
         if book_title in self.lend_data:
-            self.lend_data.pop(book_title)
-            print(f"{book_title} has been returned.\n")
+            lender, due_date = self.lend_data.pop(book_title)
+            print(f"{book_title} has been returned by {lender}.\n")
         else:
             print(f"{book_title} is not marked as lent.\n")
 
